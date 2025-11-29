@@ -1,0 +1,13 @@
+{
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "notebook.defaultFormatter": "ms-python.black-formatter",
+    "notebook.formatOnSave.enabled": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.generateWithTypeAnnotation": true,
+    "python.analysis.inlayHints.callArgumentNames": "partial",
+    "python.analysis.inlayHints.functionReturnTypes": true,
+    "python.analysis.inlayHints.variableTypes": true,
+    "python.analysis.languageServerMode": "full",
+    "python.analysis.autoImportCompletions": true
+}
