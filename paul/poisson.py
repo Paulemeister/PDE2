@@ -1,23 +1,31 @@
+#Loads a mesh
+#Constructs linear or quadratic finite elements
+#Assembles stiffness matrix and load vector
+#Applies Dirichlet and Neumann boundary conditions
+#Solves the Poisson equation
+#Visualizes the solution
+
 from typing import Callable
 import numpy as np
 from numpy.typing import NDArray
-from scipy.sparse import lil_matrix
+from scipy.sparse import lil_matrix # type: ignore
 from paul_mesh_ops import MeshOps
-import matplotlib
+import matplotlib # type: ignore
 
 matplotlib.use("QtAgg")
-import matplotlib.pyplot as plt
-import scipy as sp
+import matplotlib.pyplot as plt # type: ignore
+import scipy as sp # type: ignore 
 
 ParamDict = dict[
     str, Callable[[np.floating, np.floating], np.floating] | int | np.floating
 ]
 
-
+# Assemble the stiffness matrix and load vector for the Poisson equation
 def assemble_poisson(
     mesh: MeshOps, param: ParamDict
 ) -> tuple[lil_matrix, NDArray[np.floating]]:
 
+# extract parameters
     num_elements = mesh.getNumberOfTriangles()
     # Shape functions on P1 reference element, assuming counter clockwise from (0,0)
     p1_points = [[0, 0], [1, 0], [0, 1]]
@@ -26,6 +34,7 @@ def assemble_poisson(
         lambda x, y: x,
         lambda x, y: y,
     ]
+    # Derivatives of shape functions on P1 reference element
     dshape_1: list[Callable[[np.floating, np.floating], NDArray[np.floating]]] = [
         lambda x, y: np.array([-1, -1]),
         lambda x, y: np.array([1, 0]),
@@ -40,6 +49,7 @@ def assemble_poisson(
         [0.5, 0.5],
         [0, 0.5],
     ]
+    # Shape functions on P2 reference element
     shape_2: list[Callable[[np.floating, np.floating], np.floating]] = [
         lambda x, y: 1 - 3 * x - 3 * y + 4 * x * y + 2 * x**2 + 2 * y**2,
         lambda x, y: -x + 2 * x**2,
@@ -48,6 +58,7 @@ def assemble_poisson(
         lambda x, y: 4 * x * y,
         lambda x, y: 4 * y - 4 * x * y - 4 * y**2,
     ]
+    # Derivatives of shape functions on P2 reference element
     dshape_2: list[Callable[[int, int], NDArray[np.floating]]] = [
         lambda x, y: np.array([4 * x + 4 * y - 3, 4 * y + 4 * x - 3]),
         lambda x, y: np.array([4 * x - 1, 0]),
@@ -59,12 +70,16 @@ def assemble_poisson(
 
     # points for quadrature on reference element from hw5
     source: Callable[[np.floating, np.floating], np.floating] = param["source"]  # type: ignore
+    # depending on order, set shape functions and quadrature points
     order: int = param_poisson["order"]  # type: ignore
     if order == 2:
         phi = shape_2
+        # derivatives of shape functions
         dphi = dshape_2
+        # number of local nodes per element
         local_n = 6
         N = len(mesh.points)
+        # quadrature points and weights
         wts, pts, N_quadr = mesh.IntegrationRuleOfTriangle()
 
     else:
@@ -255,7 +270,7 @@ def get_midpoint(
 def solve_poisson(meshfile: str, param: ParamDict) -> None:
     mesh: MeshOps = MeshOps(meshfile)
 
-    mesh.getNodeNumbersOfTriangle(0, 4)
+    #mesh.getNodeNumbersOfTriangle(0, 4)
 
     # simple file doesn't include the neumann boundary with id==3,
     # so we just add it here ( boundary condition code depends on it)
@@ -314,12 +329,12 @@ def split_6triangles3(mesh: MeshOps):
 
 param_poisson: ParamDict = dict(
     laplaceCoeff=1,
-    # source=lambda x, y: np.float64(1.0),
+    #source=lambda x, y: np.float64(1.0),
     source=lambda x, y: np.sin(2 * np.pi * x) * np.cos(2 * np.pi * y),
     dirichlet=0,
-    neumann=1,
-    order=1,
+    neumann=2,
+    order=2,  # Change order number to 1 & 2 for P1 & P2 elements respectively
 )
 # solve_poisson("mesh/unitSquareStokes.msh", param_poisson)
 solve_poisson("../mesh/unitSquare2.msh", param_poisson)
-# solve_poisson("mesh/unitSquare1.msh", param_poisson)
+# solve_poisson("../mesh/unitSquare1.msh", param_poisson)
