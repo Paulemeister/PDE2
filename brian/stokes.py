@@ -168,8 +168,8 @@ def apply_boundary_conditions(A, b, points, inflow, wall, n_nodes):
 
     # Parabolic inflow
     for i in np.where(inflow)[0]:
-        u_bc = y[i]**2 - 1
-        #u_bc = y[i]**3 - y[i]
+        #u_bc = y[i]**2 - 1
+        u_bc = y[i]**3 - y[i]
         A[i, :] = 0;  A[i, i] = 1;  b[i] = u_bc
         A[n_nodes+i, :] = 0; A[n_nodes+i, n_nodes+i] = 1; b[n_nodes+i] = 0
 
@@ -218,7 +218,7 @@ def plot_solution(points, triangles, u1, u2, p):
     # Plot 1: u1, remove vmin=0 to show negative values!
     fig, ax = plt.subplots(figsize=(8, 8))
     u1_tri = np.mean(u1[tri_plot], axis=1)  # average u1 over the triangle vertices
-    c1 = ax.tripcolor(x, y, tri_plot, facecolors=u1_tri, shading='flat', cmap='viridis',
+    c1 = ax.tripcolor(x, y, tri_plot, facecolors=u1_tri, shading='flat', cmap='viridis_r',
                   edgecolor='black', linewidth=0.5, alpha=0.9)
   # NO vmin/vmax!
     cbar = plt.colorbar(c1, ax=ax, fraction=0.046, pad=0.04)
@@ -238,7 +238,7 @@ def plot_solution(points, triangles, u1, u2, p):
     # Plot 2: u2
     fig, ax = plt.subplots(figsize=(8, 8))
     u2_tri = np.mean(u2[tri_plot], axis=1)
-    c2 = ax.tripcolor(x, y, tri_plot, facecolors=u2_tri, shading='flat', cmap='viridis',
+    c2 = ax.tripcolor(x, y, tri_plot, facecolors=u2_tri, shading='flat', cmap='viridis_r',
                   edgecolor='black', linewidth=0.5, alpha=0.9)
     cbar = plt.colorbar(c2, ax=ax, fraction=0.046, pad=0.04)
     cbar.set_label('u₂', labelpad=15, fontsize=12)
@@ -257,7 +257,7 @@ def plot_solution(points, triangles, u1, u2, p):
     # Plot 3: Pressure
     fig, ax = plt.subplots(figsize=(8, 8))
     p_tri = np.mean(p[tri_plot], axis=1)  # average p over triangle vertices
-    c3 = ax.tripcolor(x, y, tri_plot, facecolors=p_tri, shading='flat', cmap='viridis',
+    c3 = ax.tripcolor(x, y, tri_plot, facecolors=p_tri, shading='flat', cmap='viridis_r',
                   edgecolor='black', linewidth=0.5, alpha=0.9)
 
     cbar = plt.colorbar(c3, ax=ax, fraction=0.046, pad=0.04)
@@ -277,7 +277,7 @@ def plot_solution(points, triangles, u1, u2, p):
     # Plot 4: Velocity magnitude
     fig, ax = plt.subplots(figsize=(8, 8))
     vel_tri = np.mean(vel_mag[tri_plot], axis=1)  # average velocity magnitude for each triangle
-    c4 = ax.tripcolor(x, y, tri_plot, facecolors=vel_tri, shading='flat', cmap='viridis',
+    c4 = ax.tripcolor(x, y, tri_plot, facecolors=vel_tri, shading='flat', cmap='viridis_r',
                   edgecolor='black', linewidth=0.5, alpha=0.9)
 
     cbar = plt.colorbar(c4, ax=ax, fraction=0.046, pad=0.04)
@@ -309,6 +309,25 @@ def plot_solution(points, triangles, u1, u2, p):
 
     # plt.tight_layout()
     # plt.close()
+
+ # Plot 5: Velocity arrows
+    fig, ax = plt.subplots(figsize=(8, 8))
+    skip = max(1, len(x)//50)  
+    ax.quiver(x[::skip], y[::skip], u1[::skip], u2[::skip],
+              vel_mag[::skip], scale=10, cmap='viridis', width=0.005)
+    ax.set_aspect('equal')
+    ax.set_title('Velocity Flow', fontsize=14, fontweight='bold', pad=10)
+    ax.set_xlabel('x', fontsize=12)
+    ax.set_ylabel('y', fontsize=12)
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    plt.colorbar(ax.quiver(x[::skip], y[::skip], u1[::skip], u2[::skip],
+                           vel_mag[::skip], scale=10, cmap='viridis'), ax=ax,
+                 label='|u|', fraction=0.046, pad=0.04)
+    plt.tight_layout()
+    plt.savefig('velocity_direction.png', dpi=300, bbox_inches='tight')
+    print("Saved: velocity_direction.png")
+    plt.close()
 
 if __name__ == "__main__":
     solve_stokes(mesh_file="unitSquareStokes.msh")

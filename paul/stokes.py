@@ -1,17 +1,24 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Now you can import mesh_ops
+from mesh_ops import MeshOps
+
 from typing import Callable
-from matplotlib.collections import LineCollection
-import matplotlib.lines
-from meshio import Mesh
-from mpl_toolkits.mplot3d.art3d import Line3DCollection
+from matplotlib.collections import LineCollection # type: ignore
+import matplotlib.lines # type: ignore
+from meshio import Mesh # type: ignore
+from mpl_toolkits.mplot3d.art3d import Line3DCollection # type: ignore
 import numpy as np
 from numpy.typing import NDArray
-from scipy.sparse import lil_matrix
-from mesh_ops import MeshOps
-import matplotlib
+from scipy.sparse import lil_matrix # type: ignore
+#from mesh_ops import MeshOps
+import matplotlib # type: ignore
 
 matplotlib.use("QtAgg")
-import matplotlib.pyplot as plt
-import scipy as sp
+import matplotlib.pyplot as plt # type: ignore
+import scipy as sp # type: ignore
 
 ParamDict = dict[
     str, Callable[[np.floating, np.floating], NDArray[np.floating]] | int | np.floating
@@ -131,8 +138,8 @@ def assemble_stokes(
                     # also apply weights from quadrature
                     tempx += wts[i_quad] * x_dphi2 * phi1
                     tempy += wts[i_quad] * y_dphi2 * phi1
-                elemBx[i_func, j_func] += detJ / 2 * tempx
-                elemBy[i_func, j_func] += detJ / 2 * tempy
+                elemBx[i_func, j_func] += detJ /2 * tempx
+                elemBy[i_func, j_func] += detJ /2 * tempy
 
         for i in range(p_2_n):
             for j in range(p_1_n):
@@ -299,7 +306,9 @@ def sanity_checks(mesh: MeshOps):
 
 
 def solve_stokes(meshfile: str, param: ParamDict) -> None:
-    mesh: MeshOps = MeshOps(meshfile)
+    meshfile = os.path.join(os.path.dirname(os.path.dirname(__file__)), "mesh", "unitSquareStokes.msh")
+    mesh = MeshOps(meshfile)
+    #mesh: MeshOps = MeshOps(meshfile)
     # sanity_checks(mesh)
 
     # preprocess(mesh)
@@ -421,4 +430,6 @@ param_stokes: ParamDict = dict(
     neumann=0,
     order=1,
 )
-solve_stokes("mesh/unitSquareStokes.msh", param_stokes)
+#solve_stokes("mesh/unitSquareStokes.msh", param_stokes)
+meshfile = os.path.join(os.path.dirname(os.path.dirname(__file__)), "mesh", "unitSquareStokes.msh")
+solve_stokes(meshfile, param_stokes)
