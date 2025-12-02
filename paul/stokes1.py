@@ -149,7 +149,7 @@ def apply_bc_stokes(
     mesh: MeshOps, M: lil_matrix, f: NDArray[np.floating], param, 
     p2_global_to_dof: dict, p1_global_to_dof: dict
 ) -> tuple[lil_matrix, NDArray[np.floating]]:
-    """Apply boundary conditions using DOF mappings"""
+    #Apply boundary conditions using DOF mappings
 
     N_u = len(p2_global_to_dof)
     N_p = len(p1_global_to_dof)
