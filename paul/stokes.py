@@ -196,7 +196,7 @@ def apply_bc_stokes(
     for i, point in enumerate(np.unique(mesh.triangles)):
         p1_map[point] = i
 
-    omega2_f = lambda x, y: np.array([(y - 1) * (y + 1), 0])
+    omega2_f = param["omega2"]
 
     for i, (line3, tag) in enumerate(zip(lines3, mesh.lineTags)):
 
@@ -301,6 +301,10 @@ def get_midpoint(
 
 def solve_stokes(meshfile: str, param: ParamDict) -> None:
     mesh: MeshOps = MeshOps(meshfile)
+    p1_map = dict()
+
+    for i, point in enumerate(np.unique(mesh.triangles)):
+        p1_map[point] = i
 
     print_mat: bool = False
 
@@ -326,22 +330,22 @@ def solve_stokes(meshfile: str, param: ParamDict) -> None:
     # visualize on values on the nodes
     # ( accurate for S1 and S2 approximate space)
 
-    fig, ax = plt.subplots(nrows=2)
-    ax1, ax2 = ax
+    fig, ax = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True)
+    (ax1, ax2), (ax3, ax4) = ax
 
     x = mesh.points[:, 0]
     y = mesh.points[:, 1]
 
     # display linear interpolation between between approximate solution on nodes,
     # meaning vertexes with P1 or vertices and midpoints on P2
-    triangles3 = split_6triangles3(mesh)
-    tris = mesh.triangles
+    tri_p2 = split_6triangles3(mesh)
+    tri_p1 = mesh.triangles
     # ax.plot_trisurf(x, y, z, triangles=triangles, cmap="viridis")
     m1 = ax1.tripcolor(
         x,
         y,
         un_x,
-        triangles=tris,
+        triangles=tri_p2,
         cmap="viridis",
         edgecolor="black",
         shading="flat",
@@ -351,34 +355,54 @@ def solve_stokes(meshfile: str, param: ParamDict) -> None:
         x,
         y,
         un_y,
-        triangles=tris,
+        triangles=tri_p2,
         cmap="viridis",
         edgecolor="black",
         shading="flat",
         linewidth=0.2,
     )
 
-    ax1.set_xlabel("x")
-    ax1.set_ylabel("y")
-    ax2.set_xlabel("x")
-    ax2.set_ylabel("y")
+    # make new vector for p that has len of points list,
+    # that can be indexed by the global point index
+
+    p_ixs = np.unique(mesh.triangles)
+
+    pn_help = np.zeros_like(un_x)
+
+    for p_ix in p_ixs:
+        loc_p_ix = p1_map[p_ix]
+        pn_help[p_ix] = pn[loc_p_ix]
+
+    m3 = ax3.tripcolor(
+        x,
+        y,
+        pn_help,
+        triangles=tri_p1,
+        cmap="viridis",
+        edgecolor="black",
+        shading="flat",
+        linewidth=0.2,
+    )
+
+    ax4.quiver(x, y, un_x, un_y, angles="xy", scale=10.0)
+
     ax1.set_title("$u_1$")
     ax2.set_title("$u_2$")
-    # m3 = ax1.scatter(x, y, c=un_x)
-    # m4 = ax2.scatter(x, y, c=un_y)
+    ax3.set_title("$p$")
+    ax4.set_title("$u$")
 
     segments = np.array([[mesh.points[i], mesh.points[j]] for i, j in mesh.lines])
-    # colors = plt.colormaps.get_cmap()
 
     cmap = matplotlib.colormaps.get_cmap("tab10")  # 10 indexed colors
     cols = [cmap(i) for i in mesh.lineTags]
-    lc = LineCollection(segments, colors=cols)  # type: ignore
-    lc2 = LineCollection(segments, colors=cols)  # type: ignore
-    ax1.add_collection(lc)
-    ax2.add_collection(lc2)
 
-    fig.colorbar(m1)
-    fig.colorbar(m2)
+    for a in [ax1, ax2, ax3, ax4]:
+        a.set_xlabel("x")
+        a.set_ylabel("y")
+        lc = LineCollection(segments, colors=cols)  # type: ignore
+        a.add_collection(lc)
+
+    fig.colorbar(m1, ax=[ax1, ax2, ax3, ax4])
 
     plt.show()
 
@@ -397,5 +421,7 @@ def split_6triangles3(mesh: MeshOps):
 
 param_stokes: ParamDict = dict(
     source=lambda x, y: np.array([0, 0]),
+    omega2=lambda x, y: np.array([-(y - 1) * (y + 1), 0]),
+    # omega2=lambda x, y: np.array([y * (y - 1) * (y + 1), 0]),
 )
 solve_stokes("mesh/unitSquareStokes.msh", param_stokes)
