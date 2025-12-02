@@ -23,10 +23,8 @@ ParamDict = dict[
 def assemble_stokes(
     mesh: MeshOps, param: ParamDict
 ) -> tuple[lil_matrix, NDArray[np.floating], dict, dict]:
-    """
-    Assemble the Stokes system with P2-P1 elements.
-    Returns: (system matrix, rhs vector, p2_global_to_dof, p1_global_to_dof)
-    """
+    # Assemble the Stokes system with P2-P1 elements.
+    # Returns: (system matrix, rhs vector, p2_global_to_dof, p1_global_to_dof)
 
     num_elements = mesh.getNumberOfTriangles()
     
@@ -170,7 +168,6 @@ def apply_bc_stokes(
             for p_ix in line3:
                 if p_ix in nodes_processed:
                     continue
-                # Convert global node index to DOF index
                 if p_ix not in p2_global_to_dof:
                     continue
                 dof_idx = p2_global_to_dof[p_ix]
@@ -208,7 +205,7 @@ def apply_bc_stokes(
                 # Zero velocity on boundary
                 f[dof_idx] = 0
                 f[dof_idx + N_u] = 0
-                # Clear rows and columns
+       
                 M[dof_idx, :] = 0
                 M[:, dof_idx] = 0
                 M[dof_idx + N_u, :] = 0
@@ -232,7 +229,7 @@ def apply_bc_stokes(
 
 
 def split_6triangles3(mesh: MeshOps):
-    """Split P2 triangles into 4 P1 triangles for visualization"""
+    #Split P2 triangles into 4 P1 triangles for visualization
     new_tri = []
     for k in range(mesh.getNumberOfTriangles()):
         con = mesh.getNodeNumbersOfTriangle(k, order=2)
@@ -247,7 +244,6 @@ def split_6triangles3(mesh: MeshOps):
 def solve_stokes(meshfile: str, param: ParamDict) -> None:
     mesh = MeshOps(meshfile)
 
-    # Assemble system (this also creates the mappings)
     M, g, p2_global_to_dof, p1_global_to_dof = assemble_stokes(mesh, param)
     
     N_u = len(p2_global_to_dof)
@@ -264,7 +260,6 @@ def solve_stokes(meshfile: str, param: ParamDict) -> None:
     print("Solving linear system...")
     mn = sp.sparse.linalg.spsolve(M.tocsr(), g)
 
-    # Extract solution
     un = mn[:(N_u * 2)]
     pn = mn[(N_u * 2):]
     un_x = un[:N_u]
@@ -297,9 +292,7 @@ def solve_stokes(meshfile: str, param: ParamDict) -> None:
                 break
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 12))
-    
-    # Create arrays indexed by ACTUAL NODE NUMBERS (not DOF indices)
-    # This is the key: the array size matches mesh.points, and we index by global node number
+
     x = mesh.points[:, 0]
     y = mesh.points[:, 1]
     
@@ -332,8 +325,7 @@ def solve_stokes(meshfile: str, param: ParamDict) -> None:
 
     # Plot pressure (on P1 nodes only)
     ax = axes[1, 0]
-    
-    # Get P1 nodes and create pressure array indexed by DOF
+
     p1_nodes_list = np.array(sorted(p1_global_to_dof.keys()))
     p_values = np.array([pn[p1_global_to_dof[node]] for node in p1_nodes_list])
     
