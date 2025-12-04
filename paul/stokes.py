@@ -1,20 +1,28 @@
+#P2 (quadratic) finite elements for velocity (triangles6)
+#P1 (linear) finite elements for pressure (triangles)
+#a saddle-point system [𝐴 𝐵; 𝐵𝑇 0]
+#Dirichlet velocity BCs and a pressure DOF is fixed to zero to ensure unique solution
+# then solve the linear system and plot 𝑢𝑥, 𝑢𝑦, 𝑝 and the velocity field
+import sys
+import os
 from typing import Callable
-from matplotlib.collections import LineCollection
+from matplotlib.collections import LineCollection #type: ignore
 import numpy as np
 from numpy.typing import NDArray
-from scipy.sparse import lil_matrix
+from scipy.sparse import lil_matrix #type: ignore
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from mesh_ops import MeshOps
-import matplotlib
+import matplotlib #type: ignore
 
 matplotlib.use("QtAgg")
-import matplotlib.pyplot as plt
-import scipy as sp
+import matplotlib.pyplot as plt #type: ignore
+import scipy as sp #type: ignore
 
 ParamDict = dict[
     str, Callable[[np.floating, np.floating], NDArray[np.floating]] | int | np.floating
 ]
 
-
+# Assemble the Stokes system matrix and right-hand side
 def assemble_stokes(
     mesh: MeshOps, param: ParamDict
 ) -> tuple[lil_matrix, NDArray[np.floating]]:
@@ -68,9 +76,10 @@ def assemble_stokes(
     )  # class treats midpoints as points, for p2 mesh
     N_p = len(np.unique(mesh.triangles))
 
+# Initialize global matrices and rhs
     A = lil_matrix((2 * N_u, 2 * N_u))
     B = lil_matrix((2 * N_u, N_p))
-    f: NDArray[np.floating] = np.zeros(2 * N_u)
+    f: NDArray[np.floating] = np.zeros(2 * N_u) # rhs for velocity
 
     wts, pts, N_quadr = mesh.IntegrationRuleOfTriangle()
 
@@ -421,7 +430,7 @@ def split_6triangles3(mesh: MeshOps):
 
 param_stokes: ParamDict = dict(
     source=lambda x, y: np.array([0, 0]),
-    omega2=lambda x, y: np.array([-(y - 1) * (y + 1), 0]),
-    # omega2=lambda x, y: np.array([y * (y - 1) * (y + 1), 0]),
+    #omega2=lambda x, y: np.array([-(y - 1) * (y + 1), 0]),
+    omega2=lambda x, y: np.array([y * (y - 1) * (y + 1), 0]),
 )
-solve_stokes("mesh/unitSquareStokes.msh", param_stokes)
+solve_stokes("../mesh/unitSquareStokes.msh", param_stokes)

@@ -333,8 +333,8 @@ param_poisson: ParamDict = dict(
     source=lambda x, y: np.sin(2 * np.pi * x) * np.cos(2 * np.pi * y),
     dirichlet=0,
     neumann=2,
-    order=2,  # Change order number to 1 & 2 for P1 & P2 elements respectively
+    order=1,  # Change order number to 1 & 2 for P1 & P2 elements respectively
 )
-# solve_poisson("mesh/unitSquareStokes.msh", param_poisson)
+
 solve_poisson("../mesh/unitSquare2.msh", param_poisson)
-# solve_poisson("../mesh/unitSquare1.msh", param_poisson)
+#solve_poisson("../mesh/unitSquare1.msh", param_poisson)

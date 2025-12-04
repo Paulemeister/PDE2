@@ -134,9 +134,9 @@ def solve_poisson(meshfile, param):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
-    
+
     ax.plot_trisurf(xs, ys, u, cmap="viridis", linewidth=0.2, antialiased=True)
-    
+
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("u(x, y)")
@@ -144,13 +144,16 @@ def solve_poisson(meshfile, param):
 
 param_poisson = dict(
     laplaceCoeff=1,
-#    source=lambda x, y: 1, # np.sin(2*np.pi*x)*np.cos(2*np.pi*y),
+#     source=lambda x, y: 1, # np.sin(2*np.pi*x)*np.cos(2*np.pi*y),
     source=lambda x, y: np.sin(2*np.pi*x)*np.cos(2*np.pi*y),
     dirichlet=0,
-    neumann=2,
+    neumann=0,
     order=2 # Change order number to 1 & 2 for P1 & P2 elements respectively
 )
 
-solve_poisson("unitSquare2_P2.msh", param_poisson) # Change mesh name accordingly for P1 and P2 elements.
 
+solve_poisson("unitSquare1_P2.msh", param_poisson)
+#solve_poisson("unitSquare2_P2.msh", param_poisson) # Change mesh name accordingly for P1 and P2 elements.
+#solve_poisson("../mesh/unitSquare2.msh", param_poisson) 
+#solve_poisson("../mesh/unitSquare1.msh", param_poisson) 
 plt.show()

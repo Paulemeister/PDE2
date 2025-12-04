@@ -8,6 +8,7 @@
 
 # import sys
 # import subprocess
+import os
 import meshio # type: ignore
 import numpy as np
 import matplotlib.pyplot as plt # type: ignore
@@ -168,8 +169,10 @@ def apply_boundary_conditions(A, b, points, inflow, wall, n_nodes):
 
     # Parabolic inflow
     for i in np.where(inflow)[0]:
+        ##############################################
         #u_bc = y[i]**2 - 1
         u_bc = y[i]**3 - y[i]
+        ###############################################
         A[i, :] = 0;  A[i, i] = 1;  b[i] = u_bc
         A[n_nodes+i, :] = 0; A[n_nodes+i, n_nodes+i] = 1; b[n_nodes+i] = 0
 
@@ -329,5 +332,7 @@ def plot_solution(points, triangles, u1, u2, p):
     print("Saved: velocity_direction.png")
     plt.close()
 
+
+    
 if __name__ == "__main__":
     solve_stokes(mesh_file="unitSquareStokes.msh")
