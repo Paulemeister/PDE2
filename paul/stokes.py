@@ -27,6 +27,7 @@ def assemble_stokes(
     mesh: MeshOps, param: ParamDict
 ) -> tuple[lil_matrix, NDArray[np.floating]]:
 
+#get the number of elements and nodes
     num_elements = mesh.getNumberOfTriangles()
     # Shape functions on P1 reference element, assuming counter clockwise from (0,0)
     p1_points = [[0, 0], [1, 0], [0, 1]]
@@ -77,10 +78,15 @@ def assemble_stokes(
     N_p = len(np.unique(mesh.triangles))
 
 # Initialize global matrices and rhs
+#A → velocity-velocity matrix
+#B → velocity-pressure coupling
+#f → RHS vector for velocity
+
     A = lil_matrix((2 * N_u, 2 * N_u))
     B = lil_matrix((2 * N_u, N_p))
     f: NDArray[np.floating] = np.zeros(2 * N_u) # rhs for velocity
 
+#weights and points for numerical integration over triangles.
     wts, pts, N_quadr = mesh.IntegrationRuleOfTriangle()
 
     # for each point of the quadrature, calculate for each point in reference element (column vector )
@@ -89,8 +95,9 @@ def assemble_stokes(
     shape2_ref = np.array([[phi(x, y) for phi in shape_2] for x, y in pts])
     dshape2_ref = np.array([[phi(x, y) for phi in dshape_2] for x, y in pts])
 
+# map from global P1 node index to local index in pressure vector
     p1_map = dict()
-
+# shape functions and gradients at quadrature points on reference element
     for i, point in enumerate(np.unique(mesh.triangles)):
         p1_map[point] = i
 
@@ -118,7 +125,9 @@ def assemble_stokes(
             # also apply weights from quadrature
             temp += wts[i] * dphi @ dphi.T
 
+# sum contributions from all quadrature points
         elemA += temp * detJ
+        # global DOF indices for velocity nodes
         con6 = mesh.getNodeNumbersOfTriangle(e, order=2)
 
         # np.ix_(a,b) will create indexes p,q which, when indexing a matrix with it will select
@@ -130,9 +139,10 @@ def assemble_stokes(
             np.ix_(con6 + N_u, con6 + N_u)
         ] += elemA  # store second component of u_i at i+N_u
 
+# triangle vertices (pressure DOFs) for this element
         con3 = mesh.getNodeNumbersOfTriangle(e, order=1)
         con3_mapped = np.array([p1_map[p] for p in con3])
-
+# divergence terms in FEM saddle-point system matrix
         elemBx = np.zeros((p_2_n, p_1_n))
         elemBy = np.zeros((p_2_n, p_1_n))
         tempx = np.zeros_like(elemBx)
@@ -208,7 +218,7 @@ def apply_bc_stokes(
     omega2_f = param["omega2"]
 
     for i, (line3, tag) in enumerate(zip(lines3, mesh.lineTags)):
-
+# Tag 2 = Dirichlet BC with omega2
         if tag == 2:
 
             for p_ix in line3:
@@ -222,7 +232,7 @@ def apply_bc_stokes(
                 # set diagonal
                 M[p_ix, p_ix] = 1
                 M[p_ix + N_u, p_ix + N_u] = 1
-
+# Tag 3 = Neumann BC with zero traction (natural BC)
         elif tag == 3:
             # Do nothing boundary / surface integral is 0
             pass
@@ -249,7 +259,7 @@ def apply_bc_stokes(
 
     return M, f
 
-
+# Add midpoints to triangles and lines to convert to P2 and quadratic lines
 def add_tri6_line3(mesh: MeshOps) -> None:
 
     extra_points = []
@@ -301,13 +311,13 @@ def add_tri6_line3(mesh: MeshOps) -> None:
     mesh.points = new_points
     mesh.lines3 = new_lines
 
-
+# get midpoint of two points
 def get_midpoint(
     p1: NDArray[np.floating], p2: NDArray[np.floating]
 ) -> NDArray[np.floating]:
     return 0.5 * (p1 + p2)
 
-
+# Solve the Stokes problem and visualize the results
 def solve_stokes(meshfile: str, param: ParamDict) -> None:
     mesh: MeshOps = MeshOps(meshfile)
     p1_map = dict()
@@ -392,19 +402,19 @@ def solve_stokes(meshfile: str, param: ParamDict) -> None:
         shading="flat",
         linewidth=0.2,
     )
-
+# quiver plot for velocity field
     ax4.quiver(x, y, un_x, un_y, angles="xy", scale=10.0)
 
     ax1.set_title("$u_1$")
     ax2.set_title("$u_2$")
     ax3.set_title("$p$")
     ax4.set_title("$u$")
-
+# plot mesh lines on all subplots
     segments = np.array([[mesh.points[i], mesh.points[j]] for i, j in mesh.lines])
-
+# get colors for each line based on tag
     cmap = matplotlib.colormaps.get_cmap("tab10")  # 10 indexed colors
     cols = [cmap(i) for i in mesh.lineTags]
-
+# add mesh lines to all subplots
     for a in [ax1, ax2, ax3, ax4]:
         a.set_xlabel("x")
         a.set_ylabel("y")
@@ -415,7 +425,7 @@ def solve_stokes(meshfile: str, param: ParamDict) -> None:
 
     plt.show()
 
-
+# split P2 triangles into P1 triangles for visualization
 def split_6triangles3(mesh: MeshOps):
     new_tri = []
     for k in range(mesh.getNumberOfTriangles()):
@@ -427,10 +437,10 @@ def split_6triangles3(mesh: MeshOps):
         new_tri.append([p12, p23, p31])
     return new_tri
 
-
+# Example usage
 param_stokes: ParamDict = dict(
     source=lambda x, y: np.array([0, 0]),
-    #omega2=lambda x, y: np.array([-(y - 1) * (y + 1), 0]),
-    omega2=lambda x, y: np.array([y * (y - 1) * (y + 1), 0]),
+    omega2=lambda x, y: np.array([-(y - 1) * (y + 1), 0]),
+    #omega2=lambda x, y: np.array([y * (y - 1) * (y + 1), 0]),
 )
 solve_stokes("../mesh/unitSquareStokes.msh", param_stokes)
